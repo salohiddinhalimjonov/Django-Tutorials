@@ -16,7 +16,7 @@ class Food(models.Model):
 
 on_delete - these on_delete arguments decide whether a deletion must
 happen or what needs to be followed when the object or parent value is deleted
-There are 5 options of on_delete argument:
+There are several options of on_delete argument:
 
 1.CASCADE:
 When the referenced object is deleted from the databasse then
