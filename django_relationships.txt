@@ -1,0 +1,114 @@
+One To Many(Foreign Key) Relationship:
+
+A one to many relationship implies that one model record can have many other model records associated with itself.
+For example, a Menu model record can have many Food model records associated with it and yet an Food belongs to a single Menu record. 
+To define a one to many relationship in Django models you use the ForeignKey data type
+
+class Menu(models.Model):
+    name = models.CharField(max_length=30)
+
+class Food(models.Model):
+    menu = models.ForeignKey(Menu, on_delete=models.CASCADE)
+    name = models.CharField(max_length=30)
+    description = models.CharField(max_length=100)
+
+
+
+on_delete - these on_delete arguments decide whether a deletion must
+happen or what needs to be followed when the object or parent value is deleted
+There are 5 options of on_delete argument:
+
+1.CASCADE:
+When the referenced object is deleted from the databasse then
+all the entries of the object will also be deleted from the entire database 
+
+2.PROTECT:
+PROTECT argument of the Foreign Key on_delete option revents the referenced object from being deleted if it already has an object referencing it in the database.
+Put simply, Django will prevent a post from deletion if it already has comments.
+
+3.SET_NULL:
+SET_NULL argument of the ForeignKey on_delete option is only available to you when you have set the null option on the ForeignKey field to True.
+When you use this argument, and, in our case, delete a post, it is going to leave the comments in the database without deleting it.
+Sometimes this option is what you need. For instance, if you want to delete a user and keep the number of times he has logged into your app for audit purposes.
+when a deletion happens to the referenced object then the value of the referencing object will be updated as NULL.
+So a NULL value will be placed for the referencing object. This is how the SET NULL will operate basically.
+
+4.SET_DEFAULT:
+This argument on the ForeignKey on_delete option requires you to set a default value when defining the relationship.
+When you delete a post that has comments, the comments are automatically assigned to a default post you had set when creating the model.
+
+class Policy(models.Model):
+        name = models.SlugField(max_length=256, blank = False, unique = True)
+def default_policy():
+        return Policy.objects.get(name='default').pk
+class Item(models.Model):
+        policy = models.ForeignKey('Policy', on_delete=models.SET_DEFAULT, default=default_policy)
+
+5.SET:
+This is similar to SET_DEFAULT, but more powerful. 
+It allows you to set the value of the ForeignKey to the value passed in the SET(), or a callable you have defined and passed to it as an argument.
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
+
+def get_sentinel_user():
+    return get_user_model().objects.get_or_create(username='deleted')[0]
+
+class MyModel(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET(get_sentinel_user),
+    )
+
+6.DO_NOTHING:
+As the name implies, it does nothing when a referenced object is deleted. This is essentially discouraged because it defeats the purpose of an RDBMS. 
+Your comments are still referencing posts that do not exist, causing a whole lot of bugs, and data integrity errors. 
+INTEGRITYERROR will be raised if your database enforces referential integrity.
+
+7.RESTRICT:
+Prevent deletion of the referenced object by raising RestrictedError (a subclass of django.db.IntegrityError). 
+Unlike PROTECT, deletion of the referenced object is allowed if it also references a different object that is being deleted in the same operation, 
+but via a CASCADE relationship.
+
+class Artist(models.Model):
+    name = models.CharField(max_length=10)
+
+class Album(models.Model):
+    artist = models.ForeignKey(Artist, on_delete=models.CASCADE)
+
+class Song(models.Model):
+    artist = models.ForeignKey(Artist, on_delete=models.CASCADE)
+    album = models.ForeignKey(Album, on_delete=models.RESTRICT)
+
+
+
+Many To Many Relationship:
+A many to many relationship implies that many records can have many other records associated amongst one another. 
+For example, Store model records can have many Amenity records, just as Amenity records can belong to many Store records.
+
+from django.db import models
+
+class Amenity(models.Model):
+    name = models.CharField(max_length=30)
+    description = models.CharField(max_length=100)
+
+class Store(models.Model):
+    name = models.CharField(max_length=30)    
+    address = models.CharField(max_length=30)
+    city = models.CharField(max_length=30)
+    state = models.CharField(max_length=2)
+    email = models.EmailField()
+    amenities = models.ManyToManyField(Amenity,blank=True)
+
+
+One To One Relationship:
+One-to-one relationships occur when there is exactly one record in the first table that corresponds to one record in the related table. 
+If we see in example, one person can have only one passport and there is only one user of one passport.
+
+class Passport(models.Model):
+    passport_id = models.CharField(max_length=16)
+
+class User(models.Model):
+    full_name = models.CharField(max_length=64)
+    passport_id = models.OneToOneField(Passport)
